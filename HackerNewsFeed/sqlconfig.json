@@ -1,0 +1,5 @@
+{"url": "jdbc:mysql://localhost/hncomments", 
+ "driver": "com.mysql.cj.jdbc.Driver",
+ "dbtable": "comments",
+ "user": "root", 
+ "password": "sqlpassword"}
