@@ -1,6 +1,6 @@
 ## Streaming HackerNews Comments with Pyspark and Kafka
 
-This is an ETL project where I created a direct stream of HackerNews comments. For each comment, I decided to normalize and preprocess the comment, as well as extract entities. Data was then sent to  
+This is an ETL project where I created a direct stream of HackerNews comments. Comments were sent to a local Kafka cluster where they could be ingested by my Spark streaming job. For each comment, I decided to normalize and preprocess the comment, as well as extract entities. Data was then stored in a MongoDB collection. 
 
 <div style = 'text-align: center'><img src = "diagram.png" alt = "diagram" width="500"></div>
 
