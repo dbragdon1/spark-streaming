@@ -1,5 +1,8 @@
 ## Streaming HackerNews Comments with Pyspark and Kafka
 
+![Diagram]('diagram.png')
+
+This is an ETL project where I created a direct stream of HackerNews comments. For each comment, I decided to normalize and preprocess the comment, as well as extract entities. Data was then sent to  
 
 Steps:
 
@@ -21,20 +24,13 @@ Steps:
     kafka-topics.bat --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic hncomments
     ```
 
-4. Create a MySQL DB for storing the transformed comments:
+4. Create a MongoDB schema for storing transformed data:
 
-    ```sql
-    CREATE DATABASE hncomments;
-    USE hncomments;
-
-    CREATE TABLE comments(
-        id INT NOT NULL AUTO_INCREMENT,
-        comment TEXT,
-        comment_id TEXT,
-        PRIMARY KEY (id));
+    ```
+    use hncommments
+    db.createCollection("firstcollection")
     ```
 
-    You then need to edit ```sqlconfig.json``` to update the username and password for accessing your local SQL server. 
 
 4. Begin collecting HackerNews data with ```rssfeed.py```:
 
@@ -60,29 +56,30 @@ Steps:
     As comments start to pour in, the Spark pipeline will normalize them and store them in your database. Here's what the output of a transformed batch looks like:
 
     ```
-    ====== 2021-01-01 10:42:45 ======
-    +--------------------+----------+
-    |             comment|comment_id|
-    +--------------------+----------+
-    |i just got my fir...|  25605455|
-    |>wood burners hav...|  25605454|
-    |thanks. someone h...|  25605453|
-    |i think i just re...|  25605452|
-    |> if my date of b...|  25605451|
-    |yeah, i wanted to...|  25605450|
-    |probably true. th...|  25605449|
-    |plenty of vendors...|  25605447|
-    |printing money re...|  25605446|
-    |i never had any p...|  25605445|
-    |-Ç/hour is my lim...|  25605444|
-    |i'm not very fami...|  25605443|
-    |i do this as well...|  25605442|
-    |yes, but i would ...|  25605441|
-    |debian on less ra...|  25605440|
-    |doordash and post...|  25605439|
-    |this one will end...|  25605438|
-    |there's a place l...|  25605437|
-    |you should also t...|  25605436|
-    |i agree, some kin...|  25605435|
-    +--------------------+----------+
+    +--------------------+-------------------+--------------------+
+    |             comment|        date_posted|            entities|
+    +--------------------+-------------------+--------------------+
+    |i think thats bec...|2021-01-04 18:39:33|          [FTE, FTE]|
+    |snowden is a spy ...|2021-01-04 18:39:30|           [Snowden]|
+    |seems to be fine ...|2021-01-04 18:39:30|      [the Bay Area]|
+    |that sounds like ...|2021-01-04 18:39:19|  [Bitcoin, Bitcoin]|
+    |at least for the ...|2021-01-04 18:39:18|[Mac, OWA, 1, OWA...|
+    |sounds to me like...|2021-01-04 18:39:14|[FAANG, TOS, Face...|
+    |so i guess teams ...|2021-01-04 18:39:07|                  []|
+    |this shows you ca...|2021-01-04 18:38:57|                  []|
+    |funny enough i ju...|2021-01-04 18:38:54|      [RGB, RAM, 20]|
+    |sevendof  fronten...|2021-01-04 18:38:48|[Norway, ONSITE, ...|
+    |not until after y...|2021-01-04 18:38:43|                  []|
+    |thanks for the fe...|2021-01-04 18:38:37|             [first]|
+    |i havent seen any...|2021-01-04 18:38:33|[AWS, AWS, Slack,...|
+    |how can you know ...|2021-01-04 18:38:29|                  []|
+    |what is going on ...|2021-01-04 18:38:29|                  []|
+    |  location new yo...|2021-01-04 18:38:27|[New York, C++, P...|
+    |good reason to tr...|2021-01-04 18:38:24|                  []|
+    |ive always wonder...|2021-01-04 18:38:22|                  []|
+    |cisco tetration  ...|2021-01-04 18:38:17|[Cisco, Platforms...|
+    |all good man  i a...|2021-01-04 18:38:13|                  []|
+    +--------------------+-------------------+--------------------+
     ```
+
+    As you can see, the right-most column stores the extracted entities. 
