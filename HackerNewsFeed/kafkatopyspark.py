@@ -11,8 +11,11 @@ import re
 import spacy
 from string import punctuation
 
-#os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming-kafka-0-8-assembly_2.11:2.4.6, pyspark-shell'   
 
+"""os.environ['PYSPARK_SUBMIT_ARGS'] = "--packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.4.6," \
+                                    "org.mongodb.spark:mongo-spark-connector_2.11:2.4.2 " \
+                                    "--conf spark.mongodb.output.uri=mongodb://127.0.0.1/test.mycollection"
+"""
 sc = SparkContext(appName = 'StreamingKafka')   #Create SparkContext
 sc.setLogLevel('WARN')                          #Enable Warning Logs
 ssc = StreamingContext(sc, 5)                   #Start streaming context

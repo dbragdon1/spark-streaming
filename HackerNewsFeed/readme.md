@@ -50,11 +50,15 @@ Steps:
 
 5. Begin streaming comments with ```kafkatopyspark.py```:
 
+    To begin streaming, we need to submit our spark job with some specific dependencies and configurations. First, we need to use the ```spark-streaming-kafka``` package to enable streaming from our Kafka cluster. Next, we need to use ```mongo-spark-connector``` to allow a connection to be made to our MongoDB schema. Finally, we need to point the session to the correct MongoDB database and collection using ```--conf```. 
     ```
-    spark\hackernewsETL> spark-submit --packages org.apache.spark:spark-streaming-kafka-0-8-assembly_2.11:2.4.6 kafkatopyspark.py
+    spark\hackernewsETL> spark-submit \
+    --packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.4.6,\
+    org.mongodb.spark:mongo-spark-connector_2.11:2.4.2 \
+    --conf spark.mongodb.output.uri=mongodb://127.0.0.1/test.mycollection kafkatopyspark.py
     ```
 
-    As comments start to pour in, the Spark pipeline will normalize them and store them in your database. Here's what the output of a transformed batch looks like:
+    As comments start to pour in, the Spark pipeline will normalize them and store them in the database. Here's what the output of a transformed batch looks like:
 
     ```
     +--------------------+-------------------+--------------------+
