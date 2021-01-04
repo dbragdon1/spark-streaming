@@ -1,7 +1,7 @@
 from kafka import KafkaProducer
 import feedparser
 import time
-
+from datetime import datetime
 
 class HNFeed:
     def __init__(self):
@@ -28,11 +28,14 @@ class HNFeed:
         """
         #TODO: Gather more info than just comments (user_id, time submitted, parent comment, etc)
         for entry in self.feed.entries:
-            id_ = entry['id'].split('=')[1]
+            #id_ = entry['id'].split('=')[1]
+            timeposted = entry['published_parsed']
+            timeformat = datetime.fromtimestamp(time.mktime(timeposted))
             text = entry['summary']
             self.producer.send(topic = 'hncomments',
-                               key = id_,
+                               key = str(timeformat),
                                value = text)
+
 
     def run(self):
         while True:

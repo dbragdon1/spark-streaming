@@ -3,10 +3,13 @@ from pyspark import SparkConf, SparkContext
 from pyspark.streaming.kafka import KafkaUtils
 from pyspark.streaming import StreamingContext
 from pyspark.sql import Row
+from pyspark.sql.functions import lit
 import os
 import json
 from bs4 import BeautifulSoup
 import re
+import spacy
+from string import punctuation
 
 #os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming-kafka-0-8-assembly_2.11:2.4.6, pyspark-shell'   
 
@@ -14,6 +17,7 @@ sc = SparkContext(appName = 'StreamingKafka')   #Create SparkContext
 sc.setLogLevel('WARN')                          #Enable Warning Logs
 ssc = StreamingContext(sc, 5)                   #Start streaming context
 sqlconf = json.load(open('sqlconfig.json'))     #load MySQL DB params
+spacy_model = spacy.load('en_core_web_sm')
 
 #Start Kafka stream listener
 kafkaStream = KafkaUtils.createStream(ssc = ssc, 
@@ -40,25 +44,38 @@ def clean(document):
     2. Remove numbers
     3. Convert to lowercase
     """
-    document = BeautifulSoup(document, 'lxml').get_text()
+    #document = BeautifulSoup(document, 'lxml').get_text()
     document = re.sub(r'[0-9]', '', document)
+    document = "".join([c for c in document if c not in punctuation])
     return document.lower()
+
+def get_ents(document):
+    return [ent.text for ent in spacy_model(document).ents]
 
 #TODO: Skip Dataframe transformation step and export rdd straight to db
 def process(time, rdd):
     if not rdd.isEmpty():
         print('====== %s ======' % str(time))
         spark = getSparkSessionInstance(rdd.context.getConf())
+
+        #preprocess comments by removing html tags
+        remove_html = rdd.map(lambda x: (x[0], BeautifulSoup(x[1], 'lxml').get_text()))
         
-        #Transforming step
-        clean_rdd = rdd.map(lambda x: (x[0], clean(x[1]))) #normalize comments
-        rowRdd = clean_rdd.map(lambda x: Row(comment_id = x[0], comment = x[1]))
-        df = spark.createDataFrame(rowRdd)
+        #normalize comments and get entities
+        cleaned = remove_html.map(lambda x: Row(date_posted = x[0], 
+                                         comment = clean(x[1]), 
+                                         entities = get_ents(x[1])))
+
+        cleaned = spark.createDataFrame(cleaned)
+        cleaned.show()
+
+        #Write to MongoDB schema
+        cleaned.write.format("mongo").mode("append").save()
 
         #Loading Step
         #Write transformed comments to MySql table
-        df.write.format('jdbc').options(**sqlconf).mode('append').save()
-        df.show()
+        #df.write.format('jdbc').options(**sqlconf).mode('append').save()
+        #df.show()
 
 kafkaStream.foreachRDD(process)
 
